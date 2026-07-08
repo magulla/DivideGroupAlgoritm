@@ -6,9 +6,7 @@ import {
   SEMIFINALS,
   THIRD_PLACE,
   FINAL,
-  getSemifinalTeams,
-  getFinalTeams,
-  getThirdPlaceTeams,
+  QUARTERFINAL_TEAMS,
 } from './matches.js';
 
 // Soft deterrent only — checked in the browser, not enforced by Firestore
@@ -27,12 +25,15 @@ const EMPTY_RESULTS = {
   third: null, final: null,
 };
 
-function matchSelect(matchId, teamA, teamB, currentValue) {
+// `options` is the full list of teams that could plausibly win this stage.
+// Every stage is independent — you can set a semifinal or final winner
+// without having entered any other stage's result first.
+function matchSelect(matchId, label, options, currentValue) {
   const wrap = document.createElement('div');
   wrap.className = 'match-row';
   const meta = document.createElement('div');
   meta.className = 'match-meta';
-  meta.innerHTML = `<strong>${matchId.toUpperCase()}</strong>`;
+  meta.innerHTML = `<strong>${label}</strong>`;
   wrap.appendChild(meta);
 
   const select = document.createElement('select');
@@ -41,8 +42,7 @@ function matchSelect(matchId, teamA, teamB, currentValue) {
   blank.value = '';
   blank.textContent = '-- not decided yet --';
   select.appendChild(blank);
-  [teamA, teamB].forEach((t) => {
-    if (t.startsWith('Winner of') || t.startsWith('Loser of')) return;
+  options.forEach((t) => {
     const opt = document.createElement('option');
     opt.value = t;
     opt.textContent = t;
@@ -59,20 +59,13 @@ function renderForm() {
   container.innerHTML = '';
 
   QUARTERFINALS.forEach((m) => {
-    container.appendChild(matchSelect(m.id, m.teamA, m.teamB, results[m.id]));
+    container.appendChild(matchSelect(m.id, m.label, [m.teamA, m.teamB], results[m.id]));
   });
   SEMIFINALS.forEach((sf) => {
-    const { teamA, teamB } = getSemifinalTeams(sf, results);
-    container.appendChild(matchSelect(sf.id, teamA, teamB, results[sf.id]));
+    container.appendChild(matchSelect(sf.id, sf.label, QUARTERFINAL_TEAMS, results[sf.id]));
   });
-  {
-    const { teamA, teamB } = getThirdPlaceTeams(results);
-    container.appendChild(matchSelect(THIRD_PLACE.id, teamA, teamB, results[THIRD_PLACE.id]));
-  }
-  {
-    const { teamA, teamB } = getFinalTeams(results);
-    container.appendChild(matchSelect(FINAL.id, teamA, teamB, results[FINAL.id]));
-  }
+  container.appendChild(matchSelect(THIRD_PLACE.id, THIRD_PLACE.label, QUARTERFINAL_TEAMS, results[THIRD_PLACE.id]));
+  container.appendChild(matchSelect(FINAL.id, FINAL.label, QUARTERFINAL_TEAMS, results[FINAL.id]));
 }
 
 async function saveResults() {
