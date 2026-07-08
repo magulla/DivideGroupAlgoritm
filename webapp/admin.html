@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin — World Cup 2026 Fantasy Quiz</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header>
+    <h1>⚙️ Admin: Enter Results</h1>
+    <p class="tagline">Only the pool organizer should use this page. Anyone with this key can overwrite results.</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <label>
+        Admin key
+        <input id="admin-key" type="password" placeholder="Enter shared admin key" />
+      </label>
+      <p class="hint">Set your own key in <code>js/admin.js</code> (ADMIN_KEY) before sharing this app.</p>
+    </section>
+
+    <section class="card">
+      <h2>Match Winners</h2>
+      <div id="results-form"></div>
+      <div class="save-bar">
+        <button id="save-results" class="primary">Save Results</button>
+        <span id="admin-status"></span>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p><a href="index.html">Back to the quiz</a></p>
+  </footer>
+
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>
