@@ -58,10 +58,10 @@ service cloud.firestore {
       allow read: if true;
       allow write: if request.resource.data.email is string
                    && request.resource.data.picks is map;
+      allow delete: if true;
     }
     match /tournament/{docId} {
-      allow read: if true;
-      allow write: if true; // gated only by the soft admin key in admin.js
+      allow read, write, delete: if true; // gated only by the soft admin key in admin.js
     }
   }
 }
