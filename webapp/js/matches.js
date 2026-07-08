@@ -80,54 +80,6 @@ export const SCORING = {
   championBonus: 5,
 };
 
-function qfById(id) {
-  return QUARTERFINALS.find((m) => m.id === id);
-}
-
-function matchLabel(id) {
-  const qf = qfById(id);
-  return qf ? `${qf.teamA}/${qf.teamB}` : id;
-}
-
-// Given the results doc, figure out the two teams in a semifinal.
-export function getSemifinalTeams(sf, results) {
-  const [aSrc, bSrc] = sf.from;
-  return {
-    teamA: results[aSrc] || `Winner of ${matchLabel(aSrc)}`,
-    teamB: results[bSrc] || `Winner of ${matchLabel(bSrc)}`,
-    resolved: Boolean(results[aSrc] && results[bSrc]),
-  };
-}
-
-// Given the results doc, figure out the two teams in the final (SF winners).
-export function getFinalTeams(results) {
-  const sf1Winner = results.sf1;
-  const sf2Winner = results.sf2;
-  return {
-    teamA: sf1Winner || 'Winner of Semifinal 1',
-    teamB: sf2Winner || 'Winner of Semifinal 2',
-    resolved: Boolean(sf1Winner && sf2Winner),
-  };
-}
-
-// Third place = loser of each semifinal. Needs the semifinal's two teams
-// (derived from QF results) plus the semifinal winner to find the loser.
-export function getThirdPlaceTeams(results) {
-  function loserOf(sf) {
-    const { teamA, teamB, resolved } = getSemifinalTeams(sf, results);
-    const winner = results[sf.id];
-    if (!resolved || !winner) return null;
-    return winner === teamA ? teamB : teamA;
-  }
-  const loserA = loserOf(SEMIFINALS[0]);
-  const loserB = loserOf(SEMIFINALS[1]);
-  return {
-    teamA: loserA || 'Loser of Semifinal 1',
-    teamB: loserB || 'Loser of Semifinal 2',
-    resolved: Boolean(loserA && loserB),
-  };
-}
-
 export function isLocked(kickoffIso) {
   return Date.now() >= new Date(kickoffIso).getTime();
 }

@@ -14,9 +14,6 @@ import {
   FINAL,
   QUARTERFINAL_TEAMS,
   SCORING,
-  getSemifinalTeams,
-  getFinalTeams,
-  getThirdPlaceTeams,
   isLocked,
 } from './matches.js';
 
@@ -94,6 +91,42 @@ function renderMatchRow(container, matchId, label, teamA, teamB, kickoffIso, ven
   container.appendChild(row);
 }
 
+// Semifinals/Third-Place/Final let you pick any of the 8 quarterfinalists,
+// independent of how earlier rounds turn out — a dropdown fits that better
+// than a two-team head-to-head button pair.
+function renderMatchSelect(container, matchId, label, kickoffIso, venue, options, currentPick) {
+  const locked = isLocked(kickoffIso);
+  const row = document.createElement('div');
+  row.className = 'match-row' + (locked ? ' locked' : '');
+  row.dataset.match = matchId;
+
+  const meta = document.createElement('div');
+  meta.className = 'match-meta';
+  const kickoffDate = new Date(kickoffIso);
+  meta.innerHTML = `<strong>${label}</strong><span>${venue} · ${kickoffDate.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}${locked ? ' · <em>locked</em>' : ''}</span>`;
+  row.appendChild(meta);
+
+  const select = document.createElement('select');
+  select.disabled = locked;
+  const blank = document.createElement('option');
+  blank.value = '';
+  blank.textContent = '-- choose a team --';
+  select.appendChild(blank);
+  options.forEach((t) => {
+    const opt = document.createElement('option');
+    opt.value = t;
+    opt.textContent = t;
+    if (currentPick === t) opt.selected = true;
+    select.appendChild(opt);
+  });
+  select.addEventListener('change', () => {
+    draftPicks[matchId] = select.value;
+  });
+  row.appendChild(select);
+
+  container.appendChild(row);
+}
+
 function renderPicksForm() {
   const container = document.getElementById('picks-form');
   container.innerHTML = '';
@@ -110,28 +143,21 @@ function renderPicksForm() {
   });
 
   const sfSection = document.createElement('section');
-  sfSection.innerHTML = '<h3>Semifinals <span class="pts">2 pts each</span></h3>';
+  sfSection.innerHTML = '<h3>Semifinals <span class="pts">2 pts each</span></h3><p class="hint">Pick any of the 8 quarterfinalists to win — not limited to a specific bracket matchup.</p>';
   container.appendChild(sfSection);
   SEMIFINALS.forEach((sf) => {
-    const { teamA, teamB } = getSemifinalTeams(sf, results);
-    renderMatchRow(sfSection, sf.id, sf.label, teamA, teamB, sf.kickoff, sf.venue, existing[sf.id]);
+    renderMatchSelect(sfSection, sf.id, sf.label, sf.kickoff, sf.venue, QUARTERFINAL_TEAMS, existing[sf.id]);
   });
 
   const thirdSection = document.createElement('section');
   thirdSection.innerHTML = '<h3>Third-Place Match <span class="pts">1 pt</span></h3>';
   container.appendChild(thirdSection);
-  {
-    const { teamA, teamB } = getThirdPlaceTeams(results);
-    renderMatchRow(thirdSection, THIRD_PLACE.id, THIRD_PLACE.label, teamA, teamB, THIRD_PLACE.kickoff, THIRD_PLACE.venue, existing[THIRD_PLACE.id]);
-  }
+  renderMatchSelect(thirdSection, THIRD_PLACE.id, THIRD_PLACE.label, THIRD_PLACE.kickoff, THIRD_PLACE.venue, QUARTERFINAL_TEAMS, existing[THIRD_PLACE.id]);
 
   const finalSection = document.createElement('section');
   finalSection.innerHTML = '<h3>Final <span class="pts">3 pts</span></h3>';
   container.appendChild(finalSection);
-  {
-    const { teamA, teamB } = getFinalTeams(results);
-    renderMatchRow(finalSection, FINAL.id, FINAL.label, teamA, teamB, FINAL.kickoff, FINAL.venue, existing[FINAL.id]);
-  }
+  renderMatchSelect(finalSection, FINAL.id, FINAL.label, FINAL.kickoff, FINAL.venue, QUARTERFINAL_TEAMS, existing[FINAL.id]);
 
   const championSection = document.createElement('section');
   championSection.innerHTML = `<h3>Bold Champion Pick <span class="pts">${SCORING.championBonus} pts</span></h3><p class="hint">Pick the overall winner right now, before the quarterfinals kick off, for a big bonus.</p>`;
