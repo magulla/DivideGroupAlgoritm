@@ -91,3 +91,5 @@ export function isLocked(kickoffIso) {
 export function picksFrozen() {
   return Date.now() >= new Date(PICKS_FREEZE).getTime();
 }
+
+export const BET_AMOUNT = 10;

@@ -15,6 +15,7 @@ import {
   QUARTERFINAL_TEAMS,
   SCORING,
   PICKS_FREEZE,
+  BET_AMOUNT,
   isLocked,
   picksFrozen,
 } from './matches.js';
@@ -186,6 +187,68 @@ function renderSemifinalSelects(container) {
   refreshOptions();
 }
 
+// Existing picks saved before this feature existed have no `bet` field —
+// treat that as already in the pool rather than silently dropping them.
+function isInPool(entry) {
+  return entry.bet !== false;
+}
+
+async function saveBet(inPool) {
+  const status = document.getElementById('save-status');
+  try {
+    await setDoc(doc(db, 'picks', emailToId(currentUser.email)), {
+      email: currentUser.email,
+      name: currentUser.name,
+      picks: draftPicks,
+      bet: inPool,
+    }, { merge: true });
+  } catch (err) {
+    console.error(err);
+    if (status) status.textContent = 'Error saving — check console.';
+  }
+}
+
+// New bets can't be placed after the freeze, but removing one is always
+// allowed — so the checkbox stays interactive even once picks are frozen,
+// it just refuses to flip from unchecked to checked.
+function renderBetCheckbox(container, existing) {
+  const wasIn = isInPool(existing);
+  const section = document.createElement('section');
+  const row = document.createElement('div');
+  row.className = 'match-row';
+
+  const label = document.createElement('label');
+  label.style.display = 'flex';
+  label.style.alignItems = 'center';
+  label.style.gap = '0.6rem';
+  label.style.marginBottom = '0';
+
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.checked = wasIn;
+  checkbox.style.width = 'auto';
+
+  const text = document.createElement('span');
+  text.textContent = `I'm in for the $${BET_AMOUNT} pool`;
+
+  label.appendChild(checkbox);
+  label.appendChild(text);
+  row.appendChild(label);
+
+  checkbox.addEventListener('change', () => {
+    if (checkbox.checked && picksFrozen()) {
+      checkbox.checked = false;
+      const status = document.getElementById('save-status');
+      if (status) status.textContent = 'Betting closed — no new bets after the freeze.';
+      return;
+    }
+    saveBet(checkbox.checked);
+  });
+
+  section.appendChild(row);
+  container.appendChild(section);
+}
+
 function renderPicksForm() {
   const container = document.getElementById('picks-form');
   container.innerHTML = '';
@@ -201,6 +264,8 @@ function renderPicksForm() {
     banner.innerHTML = `<strong>Picks are frozen</strong> as of ${new Date(PICKS_FREEZE).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })} — no more changes allowed.`;
     container.appendChild(banner);
   }
+
+  renderBetCheckbox(container, existing);
 
   const qfSection = document.createElement('section');
   qfSection.innerHTML = '<h3>Quarterfinals <span class="pts">1 pt each</span></h3>';
@@ -253,7 +318,7 @@ async function savePicks() {
       name: currentUser.name,
       picks: draftPicks,
       updatedAt: new Date().toISOString(),
-    });
+    }, { merge: true });
     status.textContent = 'Saved ✓';
     setTimeout(() => { status.textContent = ''; }, 2500);
   } catch (err) {
@@ -296,18 +361,31 @@ function renderLeaderboard() {
     .filter((entry) => !entry.archived)
     .map((entry) => {
       const { points, breakdown } = computePoints(entry.picks || {}, results);
-      return { name: entry.name || entry.email, points, breakdown };
+      return { name: entry.name || entry.email, points, breakdown, inPool: isInPool(entry) };
     });
   rows.sort((a, b) => b.points - a.points);
   rows.forEach((r, i) => {
     const tr = document.createElement('tr');
     const detail = r.breakdown.length ? r.breakdown.join(', ') : '—';
-    tr.innerHTML = `<td>${i + 1}</td><td>${r.name}</td><td>${r.points}</td><td class="detail">${detail}</td>`;
+    tr.innerHTML = `<td>${i + 1}</td><td>${r.name}${r.inPool ? ' 💰' : ''}</td><td>${r.points}</td><td class="detail">${detail}</td>`;
     tbody.appendChild(tr);
   });
   if (rows.length === 0) {
     tbody.innerHTML = '<tr><td colspan="4">No picks submitted yet.</td></tr>';
   }
+
+  renderBettingPool(rows.filter((r) => r.inPool));
+}
+
+function renderBettingPool(bettors) {
+  const container = document.getElementById('betting-pool');
+  if (!container) return;
+  const totalBank = bettors.length * BET_AMOUNT;
+  let html = `<p>Total bank: <strong>$${totalBank}</strong> (${bettors.length} player${bettors.length === 1 ? '' : 's'} in at $${BET_AMOUNT} each)</p>`;
+  html += bettors.length > 0
+    ? `<p class="hint">Winner takes all — whoever's #1 on the leaderboard when the tournament ends wins $${totalBank}.</p>`
+    : '<p class="hint">No one has bet in yet.</p>';
+  container.innerHTML = html;
 }
 
 function subscribeToData() {

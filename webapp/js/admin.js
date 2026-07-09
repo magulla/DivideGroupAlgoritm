@@ -111,6 +111,24 @@ async function setArchived(picksId, archived) {
   }
 }
 
+function playerRow(id, entry, archived) {
+  const row = document.createElement('div');
+  row.className = 'match-row';
+  const meta = document.createElement('div');
+  meta.className = 'match-meta';
+  meta.innerHTML = `<strong>${entry.name || entry.email}</strong><span>${entry.email}</span>`;
+  row.appendChild(meta);
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = archived ? 'primary' : 'link-btn';
+  btn.textContent = archived ? 'Restore' : 'Archive';
+  btn.addEventListener('click', () => setArchived(id, !archived));
+  row.appendChild(btn);
+
+  return row;
+}
+
 function renderPlayers() {
   const container = document.getElementById('players-list');
   container.innerHTML = '';
@@ -119,24 +137,25 @@ function renderPlayers() {
     container.innerHTML = '<p class="hint">No one has submitted picks yet.</p>';
     return;
   }
-  entries.forEach(([id, entry]) => {
-    const row = document.createElement('div');
-    row.className = 'match-row';
-    const archived = Boolean(entry.archived);
-    const meta = document.createElement('div');
-    meta.className = 'match-meta';
-    meta.innerHTML = `<strong>${entry.name || entry.email}</strong><span>${entry.email}${archived ? ' · <em>archived — hidden from leaderboard</em>' : ''}</span>`;
-    row.appendChild(meta);
 
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = archived ? 'primary' : 'link-btn';
-    btn.textContent = archived ? 'Restore' : 'Archive';
-    btn.addEventListener('click', () => setArchived(id, !archived));
-    row.appendChild(btn);
+  const active = entries.filter(([, entry]) => !entry.archived);
+  const archived = entries.filter(([, entry]) => entry.archived);
 
-    container.appendChild(row);
-  });
+  const activeHeading = document.createElement('h3');
+  activeHeading.textContent = 'Active';
+  container.appendChild(activeHeading);
+  if (active.length === 0) {
+    container.insertAdjacentHTML('beforeend', '<p class="hint">No active players.</p>');
+  } else {
+    active.forEach(([id, entry]) => container.appendChild(playerRow(id, entry, false)));
+  }
+
+  if (archived.length > 0) {
+    const archivedHeading = document.createElement('h3');
+    archivedHeading.textContent = 'Archived';
+    container.appendChild(archivedHeading);
+    archived.forEach(([id, entry]) => container.appendChild(playerRow(id, entry, true)));
+  }
 }
 
 onSnapshot(RESULTS_DOC, (snap) => {
