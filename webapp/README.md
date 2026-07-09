@@ -16,8 +16,12 @@ and kickoff times as of 2026-07-08:
 - Third-place: Jul 18
 - Final: Jul 19
 
-Semifinal/third-place/final matchups auto-resolve to real team names once you
-enter quarterfinal/semifinal results in the admin page.
+Quarterfinal picks are the fixed, real matchups. Semifinal, third-place, and
+final picks let you choose any of the 8 quarterfinalists — no need to wait
+for earlier rounds to resolve, so everyone can fill out every stage in one
+sitting. The two semifinal picks share one pool of teams: picking a team to
+win one semifinal removes it from the other's options, since the same team
+can't win both.
 
 ## Scoring
 
@@ -27,7 +31,6 @@ enter quarterfinal/semifinal results in the admin page.
 | Semifinal winner | 2 |
 | Third-place winner | 1 |
 | Final winner | 3 |
-| "Bold" champion pick (made before QF1 kicks off) | 5 |
 
 ## One-time setup
 

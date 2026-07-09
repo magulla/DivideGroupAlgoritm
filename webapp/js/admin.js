@@ -61,8 +61,14 @@ function renderForm() {
   QUARTERFINALS.forEach((m) => {
     container.appendChild(matchSelect(m.id, m.label, [m.teamA, m.teamB], results[m.id]));
   });
+  // The two semifinals share one pool of 8 teams — the same team can't
+  // legitimately win both, so exclude whichever team is set as the other's
+  // winner.
   SEMIFINALS.forEach((sf) => {
-    container.appendChild(matchSelect(sf.id, sf.label, QUARTERFINAL_TEAMS, results[sf.id]));
+    const other = SEMIFINALS.find((s) => s.id !== sf.id);
+    const otherWinner = results[other.id];
+    const options = QUARTERFINAL_TEAMS.filter((t) => t !== otherWinner || t === results[sf.id]);
+    container.appendChild(matchSelect(sf.id, sf.label, options, results[sf.id]));
   });
   container.appendChild(matchSelect(THIRD_PLACE.id, THIRD_PLACE.label, QUARTERFINAL_TEAMS, results[THIRD_PLACE.id]));
   container.appendChild(matchSelect(FINAL.id, FINAL.label, QUARTERFINAL_TEAMS, results[FINAL.id]));

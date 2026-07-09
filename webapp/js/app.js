@@ -91,9 +91,9 @@ function renderMatchRow(container, matchId, label, teamA, teamB, kickoffIso, ven
   container.appendChild(row);
 }
 
-// Semifinals/Third-Place/Final let you pick any of the 8 quarterfinalists,
-// independent of how earlier rounds turn out — a dropdown fits that better
-// than a two-team head-to-head button pair.
+// Third-Place/Final let you pick any of the 8 quarterfinalists, independent
+// of how earlier rounds turn out — a dropdown fits that better than a
+// two-team head-to-head button pair.
 function renderMatchSelect(container, matchId, label, kickoffIso, venue, options, currentPick) {
   const locked = isLocked(kickoffIso);
   const row = document.createElement('div');
@@ -127,6 +127,63 @@ function renderMatchSelect(container, matchId, label, kickoffIso, venue, options
   container.appendChild(row);
 }
 
+// Semifinals share one pool of 8 teams across 2 matches, so the same team
+// can't be picked to win both — picking a team in one match removes it from
+// the other's options.
+function renderSemifinalSelects(container) {
+  const selects = {};
+
+  function refreshOptions() {
+    SEMIFINALS.forEach((sf) => {
+      const select = selects[sf.id];
+      const currentVal = draftPicks[sf.id] || '';
+      const takenBySibling = SEMIFINALS
+        .filter((other) => other.id !== sf.id)
+        .map((other) => draftPicks[other.id])
+        .filter(Boolean);
+      select.innerHTML = '';
+      const blank = document.createElement('option');
+      blank.value = '';
+      blank.textContent = '-- choose a team --';
+      select.appendChild(blank);
+      QUARTERFINAL_TEAMS.forEach((t) => {
+        if (takenBySibling.includes(t) && t !== currentVal) return;
+        const opt = document.createElement('option');
+        opt.value = t;
+        opt.textContent = t;
+        if (currentVal === t) opt.selected = true;
+        select.appendChild(opt);
+      });
+    });
+  }
+
+  SEMIFINALS.forEach((sf) => {
+    const locked = isLocked(sf.kickoff);
+    const row = document.createElement('div');
+    row.className = 'match-row' + (locked ? ' locked' : '');
+    row.dataset.match = sf.id;
+
+    const meta = document.createElement('div');
+    meta.className = 'match-meta';
+    const kickoffDate = new Date(sf.kickoff);
+    meta.innerHTML = `<strong>${sf.label}</strong><span>${sf.venue} · ${kickoffDate.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}${locked ? ' · <em>locked</em>' : ''}</span>`;
+    row.appendChild(meta);
+
+    const select = document.createElement('select');
+    select.disabled = locked;
+    select.addEventListener('change', () => {
+      draftPicks[sf.id] = select.value;
+      refreshOptions();
+    });
+    row.appendChild(select);
+    selects[sf.id] = select;
+
+    container.appendChild(row);
+  });
+
+  refreshOptions();
+}
+
 function renderPicksForm() {
   const container = document.getElementById('picks-form');
   container.innerHTML = '';
@@ -143,11 +200,9 @@ function renderPicksForm() {
   });
 
   const sfSection = document.createElement('section');
-  sfSection.innerHTML = '<h3>Semifinals <span class="pts">2 pts each</span></h3><p class="hint">Pick any of the 8 quarterfinalists to win — not limited to a specific bracket matchup.</p>';
+  sfSection.innerHTML = '<h3>Semifinals <span class="pts">2 pts each</span></h3><p class="hint">Pick any of the 8 quarterfinalists to win — the same team can\'t win both semifinals.</p>';
   container.appendChild(sfSection);
-  SEMIFINALS.forEach((sf) => {
-    renderMatchSelect(sfSection, sf.id, sf.label, sf.kickoff, sf.venue, QUARTERFINAL_TEAMS, existing[sf.id]);
-  });
+  renderSemifinalSelects(sfSection);
 
   const thirdSection = document.createElement('section');
   thirdSection.innerHTML = '<h3>Third-Place Match <span class="pts">1 pt</span></h3>';
@@ -158,35 +213,6 @@ function renderPicksForm() {
   finalSection.innerHTML = '<h3>Final <span class="pts">3 pts</span></h3>';
   container.appendChild(finalSection);
   renderMatchSelect(finalSection, FINAL.id, FINAL.label, FINAL.kickoff, FINAL.venue, QUARTERFINAL_TEAMS, existing[FINAL.id]);
-
-  const championSection = document.createElement('section');
-  championSection.innerHTML = `<h3>Bold Champion Pick <span class="pts">${SCORING.championBonus} pts</span></h3><p class="hint">Pick the overall winner right now, before the quarterfinals kick off, for a big bonus.</p>`;
-  container.appendChild(championSection);
-  const champLocked = isLocked(QUARTERFINALS[0].kickoff);
-  const select = document.createElement('select');
-  select.id = 'champion-select';
-  select.disabled = champLocked;
-  const blank = document.createElement('option');
-  blank.value = '';
-  blank.textContent = '-- choose a team --';
-  select.appendChild(blank);
-  QUARTERFINAL_TEAMS.forEach((t) => {
-    const opt = document.createElement('option');
-    opt.value = t;
-    opt.textContent = t;
-    if (existing.championEarly === t) opt.selected = true;
-    select.appendChild(opt);
-  });
-  select.addEventListener('change', () => {
-    draftPicks.championEarly = select.value;
-  });
-  championSection.appendChild(select);
-  if (champLocked) {
-    const note = document.createElement('p');
-    note.className = 'hint';
-    note.textContent = 'Locked — quarterfinals have started.';
-    championSection.appendChild(note);
-  }
 
   const saveBar = document.createElement('div');
   saveBar.className = 'save-bar';
@@ -243,10 +269,6 @@ function computePoints(picks, results) {
   if (results.final && picks.final === results.final) {
     points += SCORING.final;
     breakdown.push(`Final: +${SCORING.final}`);
-  }
-  if (results.final && picks.championEarly === results.final) {
-    points += SCORING.championBonus;
-    breakdown.push(`Bold Champion: +${SCORING.championBonus}`);
   }
   return { points, breakdown };
 }

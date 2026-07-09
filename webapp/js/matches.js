@@ -77,7 +77,6 @@ export const SCORING = {
   sf: 2,
   third: 1,
   final: 3,
-  championBonus: 5,
 };
 
 export function isLocked(kickoffIso) {
