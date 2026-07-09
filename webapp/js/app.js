@@ -280,7 +280,7 @@ function renderPicksForm() {
   renderSemifinalSelects(sfSection);
 
   const thirdSection = document.createElement('section');
-  thirdSection.innerHTML = '<h3>Third-Place Match <span class="pts">1 pt</span></h3>';
+  thirdSection.innerHTML = '<h3>Third-Place Match <span class="pts">3 pts</span></h3>';
   container.appendChild(thirdSection);
   renderMatchSelect(thirdSection, THIRD_PLACE.id, THIRD_PLACE.label, THIRD_PLACE.kickoff, THIRD_PLACE.venue, QUARTERFINAL_TEAMS, existing[THIRD_PLACE.id]);
 

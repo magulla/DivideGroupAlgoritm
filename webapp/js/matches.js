@@ -75,7 +75,7 @@ export const QUARTERFINAL_TEAMS = QUARTERFINALS.flatMap((m) => [m.teamA, m.teamB
 export const SCORING = {
   qf: 1,
   sf: 2,
-  third: 1,
+  third: 3,
   final: 3,
 };
 

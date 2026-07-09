@@ -29,7 +29,7 @@ can't win both.
 |---|---|
 | Quarterfinal winner | 1 |
 | Semifinal winner | 2 |
-| Third-place winner | 1 |
+| Third-place winner | 3 |
 | Final winner | 3 |
 
 ## One-time setup
