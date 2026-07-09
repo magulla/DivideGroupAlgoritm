@@ -79,6 +79,15 @@ export const SCORING = {
   final: 3,
 };
 
+// Hard cutoff: every pick locks at this moment regardless of individual
+// match kickoff times. Set for 3:00 PM ET on July 9, 2026 (an hour before
+// QF1 kicks off).
+export const PICKS_FREEZE = '2026-07-09T19:00:00Z';
+
 export function isLocked(kickoffIso) {
   return Date.now() >= new Date(kickoffIso).getTime();
+}
+
+export function picksFrozen() {
+  return Date.now() >= new Date(PICKS_FREEZE).getTime();
 }

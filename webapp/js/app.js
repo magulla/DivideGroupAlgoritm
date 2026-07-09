@@ -14,7 +14,9 @@ import {
   FINAL,
   QUARTERFINAL_TEAMS,
   SCORING,
+  PICKS_FREEZE,
   isLocked,
+  picksFrozen,
 } from './matches.js';
 
 const app = initializeApp(firebaseConfig);
@@ -67,7 +69,7 @@ function teamButton(matchId, side, teamName, currentPick, locked) {
 let draftPicks = {};
 
 function renderMatchRow(container, matchId, label, teamA, teamB, kickoffIso, venue, currentPick) {
-  const locked = isLocked(kickoffIso);
+  const locked = isLocked(kickoffIso) || picksFrozen();
   const row = document.createElement('div');
   row.className = 'match-row' + (locked ? ' locked' : '');
   row.dataset.match = matchId;
@@ -95,7 +97,7 @@ function renderMatchRow(container, matchId, label, teamA, teamB, kickoffIso, ven
 // of how earlier rounds turn out — a dropdown fits that better than a
 // two-team head-to-head button pair.
 function renderMatchSelect(container, matchId, label, kickoffIso, venue, options, currentPick) {
-  const locked = isLocked(kickoffIso);
+  const locked = isLocked(kickoffIso) || picksFrozen();
   const row = document.createElement('div');
   row.className = 'match-row' + (locked ? ' locked' : '');
   row.dataset.match = matchId;
@@ -158,7 +160,7 @@ function renderSemifinalSelects(container) {
   }
 
   SEMIFINALS.forEach((sf) => {
-    const locked = isLocked(sf.kickoff);
+    const locked = isLocked(sf.kickoff) || picksFrozen();
     const row = document.createElement('div');
     row.className = 'match-row' + (locked ? ' locked' : '');
     row.dataset.match = sf.id;
@@ -192,6 +194,14 @@ function renderPicksForm() {
   const existing = (latestPicks[myId] && latestPicks[myId].picks) || {};
   draftPicks = { ...existing };
 
+  const frozen = picksFrozen();
+  if (frozen) {
+    const banner = document.createElement('p');
+    banner.className = 'hint';
+    banner.innerHTML = `<strong>Picks are frozen</strong> as of ${new Date(PICKS_FREEZE).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })} — no more changes allowed.`;
+    container.appendChild(banner);
+  }
+
   const qfSection = document.createElement('section');
   qfSection.innerHTML = '<h3>Quarterfinals <span class="pts">1 pt each</span></h3>';
   container.appendChild(qfSection);
@@ -220,6 +230,7 @@ function renderPicksForm() {
   saveBtn.type = 'button';
   saveBtn.textContent = 'Save My Picks';
   saveBtn.className = 'primary';
+  saveBtn.disabled = frozen;
   saveBtn.addEventListener('click', savePicks);
   saveBar.appendChild(saveBtn);
   const status = document.createElement('span');
@@ -230,6 +241,10 @@ function renderPicksForm() {
 
 async function savePicks() {
   const status = document.getElementById('save-status');
+  if (picksFrozen()) {
+    status.textContent = 'Picks are frozen — no more changes allowed.';
+    return;
+  }
   status.textContent = 'Saving...';
   try {
     const id = emailToId(currentUser.email);
@@ -277,10 +292,12 @@ function renderLeaderboard() {
   const results = { ...EMPTY_RESULTS, ...latestResults };
   const tbody = document.getElementById('leaderboard-body');
   tbody.innerHTML = '';
-  const rows = Object.values(latestPicks).map((entry) => {
-    const { points, breakdown } = computePoints(entry.picks || {}, results);
-    return { name: entry.name || entry.email, points, breakdown };
-  });
+  const rows = Object.values(latestPicks)
+    .filter((entry) => !entry.archived)
+    .map((entry) => {
+      const { points, breakdown } = computePoints(entry.picks || {}, results);
+      return { name: entry.name || entry.email, points, breakdown };
+    });
   rows.sort((a, b) => b.points - a.points);
   rows.forEach((r, i) => {
     const tr = document.createElement('tr');

@@ -13,21 +13,38 @@
   </header>
 
   <main>
-    <section class="card">
-      <label>
-        Admin key
-        <input id="admin-key" type="password" placeholder="Enter shared admin key" />
-      </label>
+    <section id="admin-login-screen" class="card">
+      <form id="admin-login-form">
+        <label>
+          Admin key
+          <input id="admin-key" type="password" placeholder="Enter shared admin key" required />
+        </label>
+        <button type="submit" class="primary">Log In</button>
+        <p id="admin-login-error" class="hint"></p>
+      </form>
       <p class="hint">Set your own key in <code>js/admin.js</code> (ADMIN_KEY) before sharing this app.</p>
     </section>
 
-    <section class="card">
-      <h2>Match Winners</h2>
-      <div id="results-form"></div>
-      <div class="save-bar">
-        <button id="save-results" class="primary">Save Results</button>
-        <span id="admin-status"></span>
+    <section id="admin-panel" class="hidden">
+      <div class="topbar">
+        <span>Logged in as admin</span>
+        <button id="admin-logout-btn" class="link-btn">Log out</button>
       </div>
+
+      <section class="card">
+        <h2>Match Winners</h2>
+        <div id="results-form"></div>
+        <div class="save-bar">
+          <button id="save-results" class="primary">Save Results</button>
+          <span id="admin-status"></span>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Manage Players</h2>
+        <p class="hint">Archiving hides someone from the live leaderboard without deleting their picks — click Restore to bring them back.</p>
+        <div id="players-list"></div>
+      </section>
     </section>
   </main>
 
