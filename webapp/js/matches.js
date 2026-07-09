@@ -93,3 +93,18 @@ export function picksFrozen() {
 }
 
 export const BET_AMOUNT = 10;
+
+// "Win it all" moneyline odds pulled 2026-07-09 (quarterfinal stage), vig
+// removed and normalized to sum to 100%. Not live-updating — ask to refresh
+// as the tournament progresses if you want fresher numbers baked in.
+export const ODDS_SNAPSHOT_DATE = '2026-07-09';
+export const TEAM_WIN_PROBABILITY = {
+  France: 0.3198,
+  Spain: 0.1906,
+  Argentina: 0.1828,
+  England: 0.1600,
+  Norway: 0.0597,
+  Morocco: 0.0320,
+  Belgium: 0.0289,
+  Switzerland: 0.0263,
+};
