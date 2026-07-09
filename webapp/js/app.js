@@ -397,6 +397,7 @@ function subscribeToData() {
   onSnapshot(PICKS_COL, (snap) => {
     latestPicks = {};
     snap.forEach((d) => { latestPicks[d.id] = d.data(); });
+    if (currentUser) renderPicksForm();
     renderLeaderboard();
   });
 }
