@@ -178,6 +178,17 @@ th, td {
 
 td.detail { color: var(--muted); font-size: 0.8rem; }
 
+.table-scroll {
+  overflow-x: auto;
+}
+
+.countdown {
+  font-size: 2rem;
+  font-weight: bold;
+  text-align: center;
+  margin: 1rem 0;
+}
+
 footer {
   text-align: center;
   color: var(--muted);

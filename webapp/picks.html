@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Everyone's Picks — World Cup 2026 Fantasy Quiz</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header>
+    <h1>🔍 Everyone's Picks</h1>
+    <p class="tagline">Revealed once picks freeze — no peeking beforehand.</p>
+  </header>
+
+  <main>
+    <section id="hidden-screen" class="card">
+      <h2>Picks are still hidden</h2>
+      <p>Revealed in:</p>
+      <p id="countdown" class="countdown">—</p>
+    </section>
+
+    <section id="reveal-screen" class="card hidden">
+      <h2>Picks</h2>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>QF1</th><th>QF2</th><th>QF3</th><th>QF4</th>
+              <th>SF1</th><th>SF2</th>
+              <th>3rd</th><th>Final</th>
+            </tr>
+          </thead>
+          <tbody id="picks-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p><a href="index.html">Back to the quiz</a></p>
+  </footer>
+
+  <script type="module" src="js/picks.js"></script>
+</body>
+</html>
