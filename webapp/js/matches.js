@@ -95,13 +95,11 @@ export function picksFrozen() {
 export const BET_AMOUNT = 10;
 
 // "Win it all" moneyline odds pulled 2026-07-09 (quarterfinal stage), vig
-// removed and normalized to sum to 100%. Not live-updating — ask to refresh
-// as the tournament progresses if you want fresher numbers baked in.
-//
-// Refreshed 2026-07-09 after QF1 (France 2-0 Morocco, confirmed final
-// score): Morocco is eliminated (0%) and its market share was
-// redistributed proportionally across the 7 remaining teams.
-export const ODDS_SNAPSHOT_DATE = '2026-07-09 (post-QF1)';
+// removed and normalized to sum to 100%. This is a static pre-tournament
+// prior — it does NOT need manual edits as results come in. Elimination is
+// derived live from entered results (see computeLiveTeamOdds below), which
+// zeroes out eliminated teams and renormalizes the rest automatically.
+export const ODDS_SNAPSHOT_DATE = '2026-07-09 (pre-quarterfinal market odds)';
 export const TEAM_WIN_PROBABILITY = {
   France: 0.3303,
   Spain: 0.1969,
@@ -112,3 +110,52 @@ export const TEAM_WIN_PROBABILITY = {
   Switzerland: 0.0272,
   Morocco: 0,
 };
+
+// Teams still alive to win the whole tournament, given entered results.
+// Semifinal/third/final picks are free-form (any of the 8 teams), so we
+// don't track who actually played whom there — but the real bracket
+// topology (`from`) always feeds the actual QF winners into each
+// semifinal, so eliminations can still be derived correctly by combining
+// that fixed topology with whichever results are entered so far.
+function computeAliveTeams(results) {
+  const alive = new Set(QUARTERFINAL_TEAMS);
+
+  QUARTERFINALS.forEach((m) => {
+    const winner = results[m.id];
+    if (!winner) return;
+    alive.delete(winner === m.teamA ? m.teamB : m.teamA);
+  });
+
+  SEMIFINALS.forEach((sf) => {
+    const [aSrc, bSrc] = sf.from;
+    const teamA = results[aSrc];
+    const teamB = results[bSrc];
+    const winner = results[sf.id];
+    if (!teamA || !teamB || !winner) return;
+    alive.delete(winner === teamA ? teamB : teamA);
+  });
+
+  const sf1Winner = results.sf1;
+  const sf2Winner = results.sf2;
+  const finalWinner = results.final;
+  if (sf1Winner && sf2Winner && finalWinner) {
+    alive.delete(finalWinner === sf1Winner ? sf2Winner : sf1Winner);
+  }
+
+  return alive;
+}
+
+// Renormalizes the static market-strength baseline down to just the teams
+// still alive per entered results, so eliminated teams always show 0%
+// without anyone needing to hand-edit the snapshot after every match.
+export function computeLiveTeamOdds(results) {
+  const alive = computeAliveTeams(results);
+  const aliveSum = Array.from(alive).reduce((sum, t) => sum + (TEAM_WIN_PROBABILITY[t] || 0), 0);
+  return QUARTERFINAL_TEAMS
+    .map((team) => {
+      const isAlive = alive.has(team);
+      const raw = TEAM_WIN_PROBABILITY[team] || 0;
+      return { team, alive: isAlive, probability: isAlive && aliveSum > 0 ? raw / aliveSum : 0 };
+    })
+    .sort((a, b) => b.probability - a.probability);
+}

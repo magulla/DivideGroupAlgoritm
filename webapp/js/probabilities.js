@@ -6,8 +6,8 @@ import {
   SEMIFINALS,
   THIRD_PLACE,
   FINAL,
-  TEAM_WIN_PROBABILITY,
   ODDS_SNAPSHOT_DATE,
+  computeLiveTeamOdds,
 } from './matches.js';
 import { simulatePoolWinProbabilities } from './simulate.js';
 
@@ -25,18 +25,16 @@ const EMPTY_RESULTS = {
 let latestResults = {};
 let latestPicks = {};
 
-function renderOdds() {
+function renderOdds(results) {
   document.getElementById('odds-note').textContent =
-    `Moneyline odds to win it all, snapshot from ${ODDS_SNAPSHOT_DATE}, vig removed. Ask to refresh these as the tournament progresses.`;
+    `Baseline market odds from ${ODDS_SNAPSHOT_DATE}, vig removed. Eliminated teams drop to 0% automatically as results come in, and the rest is renormalized live — no manual refresh needed.`;
   const tbody = document.getElementById('odds-body');
   tbody.innerHTML = '';
-  Object.entries(TEAM_WIN_PROBABILITY)
-    .sort((a, b) => b[1] - a[1])
-    .forEach(([team, p]) => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${team}</td><td>${(p * 100).toFixed(2)}%</td>`;
-      tbody.appendChild(tr);
-    });
+  computeLiveTeamOdds(results).forEach((p) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${p.team}${p.alive ? '' : ' (eliminated)'}</td><td>${(p.probability * 100).toFixed(2)}%</td>`;
+    tbody.appendChild(tr);
+  });
 }
 
 const ALL_STAGES = [...QUARTERFINALS.map((m) => m.id), ...SEMIFINALS.map((sf) => sf.id), THIRD_PLACE.id, FINAL.id];
@@ -51,6 +49,7 @@ function renderResultsNote(results) {
 
 function renderProbabilities() {
   const results = { ...EMPTY_RESULTS, ...latestResults };
+  renderOdds(results);
   renderResultsNote(results);
 
   const people = Object.values(latestPicks)
@@ -71,8 +70,6 @@ function renderProbabilities() {
     tbody.appendChild(tr);
   });
 }
-
-renderOdds();
 
 onSnapshot(RESULTS_DOC, (snap) => {
   latestResults = snap.exists() ? snap.data() : {};
